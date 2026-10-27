@@ -155,6 +155,30 @@ describe('LRUCache', () => {
       consoleSpy.mockRestore()
     })
 
+    it('should remove existing entry when its new value exceeds max size', () => {
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
+      const onEvict = jest.fn()
+      const cache = new LRUCache<string>(5, (value) => value.length, onEvict)
+
+      expect(cache.set('key1', 'ab')).toBe(true) // size 2
+      expect(cache.set('key2', 'cd')).toBe(true) // size 2, total = 4
+
+      expect(cache.set('key1', 'toolarge')).toBe(false) // size 8 > maxSize 5
+
+      expect(cache.has('key1')).toBe(false)
+      expect(cache.get('key1')).toBeUndefined()
+      expect(cache.has('key2')).toBe(true)
+      expect(cache.size).toBe(1)
+      expect(cache.currentSize).toBe(2)
+      expect(onEvict).toHaveBeenCalledTimes(1)
+      expect(onEvict).toHaveBeenCalledWith('key1', 'ab')
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Single item size exceeds maxSize'
+      )
+
+      consoleSpy.mockRestore()
+    })
+
     it('should update size when overwriting existing keys', () => {
       const cache = new LRUCache<string>(10, (value) => value.length)
 

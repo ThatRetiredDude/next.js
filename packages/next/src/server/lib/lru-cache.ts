@@ -135,6 +135,13 @@ export class LRUCache<T> {
     }
     if (size > this.maxSize) {
       console.warn('Single item size exceeds maxSize')
+      // The new value can't be stored, so drop any previous value for this
+      // key. Otherwise readers would keep getting the outdated entry.
+      const existing = this.cache.get(key)
+      if (existing) {
+        this.remove(key)
+        this.onEvict?.(key, existing.data)
+      }
       return false
     }
 
